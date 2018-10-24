@@ -1,20 +1,20 @@
+"""Directory scanner for dirtools."""
 import asyncio
 import os
 import shutil
 import time
-from collections import deque, AsyncIterable
+from collections import deque
+from collections.abc import AsyncIterable
 from enum import Enum
 from functools import partial
-
 from typing import Iterator, Tuple
 
-from dirtools import utils
-from dirtools.loggers import logger
+import utils
+from loggers import logger
 
 
 class SortBy(Enum):
-    """Helper class to be given one of its following constants as the sorting
-    option to the :class:`FolderScan`.
+    """Helper class to be given one of its following constants as the sorting option to the :class:`FolderScan`.
 
     >>> from dirtools import Folder, SortBy
     >>>
@@ -52,15 +52,18 @@ class SortBy(Enum):
     MOST_DEPTH = 12
 
     def __str__(self):
+        """Return string representation."""
         return self.name
 
     def __int__(self):
+        """Return int representation."""
         return self.value
 
 
 class Folder(object):
-    """The main class behind the magic that takes care of scanning an entire
-    folder and its sub folders, recursively in the asynchronous manner.
+    """The main class behind the magic.
+
+    Takes care of scanning an entire folder and its sub folders, recursively in the asynchronous manner.
 
     It is highly suggested that you instantiate your object from this class
     at the earliest step of your programme, as it will start doing its job
@@ -107,19 +110,20 @@ class Folder(object):
         to scan under the `{genre}` folders.
     :type level: int
     :param time_format: Optional date/time parsing format for _humanising_
-        the `size`, `atime`, `mtime` and `ctime` attributes of each item. 
-        Defaults to :attr:`._time_format`. See details for customising 
+        the `size`, `atime`, `mtime` and `ctime` attributes of each item.
+        Defaults to :attr:`._time_format`. See details for customising
         this parameter:
 
         https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
     :type time_format: str
     """
+
     #: Public property that will be calculated and set to total processing time
     #: once the parallel scanning has been finished.
     exec_took = None
 
     #: The default date/time humanising format.
-    _time_format = '%Y %b %d %H:%M'
+    _time_format = "%Y %b %d %H:%M"
     _items_len = 0
     _items = None
     _total_size = None
@@ -127,8 +131,14 @@ class Folder(object):
     _level = None
     _scanning = None
 
-    def __init__(self, path: str, sort_by: SortBy,
-                 level: int = 0, time_format: str = _time_format):
+    def __init__(
+        self,
+        path: str,
+        sort_by: SortBy,
+        level: int = 0,
+        time_format: str = _time_format,
+    ):
+        """Initialize class attributes."""
         self.exec_took = time.time()
         self._total_size = 0
         self._items = deque()
@@ -138,11 +148,12 @@ class Folder(object):
         self._time_format = time_format
 
     def __len__(self) -> int:
-        """Direct integer representation of the current items' length. Blocks until the scanning 
-        operation has been completed on first access.
-        
+        """Direct integer representation of the current items' length.
+
+        Blocks until the scanning operation has been completed on first access.
+
         >>> folder = Folder('/path/to/Python-3.6.0-source')
-        >>> assert len(folder) == 40 
+        >>> assert len(folder) == 40
 
         :return: Length of the items (sub-directories or files) inside the scanned folder.
         :rtype: int
@@ -152,8 +163,9 @@ class Folder(object):
 
     @property
     def total_size(self) -> int:
-        """Returns the calculated total size of whole items, in bytes. Use
-        :func:`dirtools.utils.bytes2human` for converting human readable format.
+        """Return the calculated total size of whole items, in bytes.
+
+        Use :func:`dirtools.utils.bytes2human` for converting human readable format.
 
         Blocks until the scanning operation has been completed on first access.
 
@@ -163,9 +175,10 @@ class Folder(object):
         self._await()
         return self._total_size
 
-    def items(self, humanise: bool=True, precision: int=2) -> Iterator[dict]:
-        """Returns an iterator for scanned items list. It doesn't return the
-        internal _items list because we don't want it to be modified outside.
+    def items(self, humanise: bool = True, precision: int = 2) -> Iterator[dict]:
+        """Return an iterator for scanned items list.
+
+        It doesn't return the internal _items list because we don't want it to be modified outside.
 
         Blocks until the scanning operation has been completed on first access.
 
@@ -189,17 +202,18 @@ class Folder(object):
     @classmethod
     def _humanise_item(cls, item: dict, precision: int) -> dict:
         humanised = item.copy()
-        humanised['size'] = utils.bytes2human(item['size'], precision=precision)
-        humanised['atime'] = time.strftime(cls._time_format, time.gmtime(item['atime']))
-        humanised['mtime'] = time.strftime(cls._time_format, time.gmtime(item['mtime']))
-        humanised['ctime'] = time.strftime(cls._time_format, time.gmtime(item['ctime']))
+        humanised["size"] = utils.bytes2human(item["size"], precision=precision)
+        humanised["atime"] = time.strftime(cls._time_format, time.gmtime(item["atime"]))
+        humanised["mtime"] = time.strftime(cls._time_format, time.gmtime(item["mtime"]))
+        humanised["ctime"] = time.strftime(cls._time_format, time.gmtime(item["ctime"]))
         return humanised
 
-    def cleanup_items(self, max_total_size: str, humanise: bool=True, precision: int=2) -> Iterator[dict]:
-        """Completely removes every item starting from the first in given
-        sorting order until it reaches to ``max_total_size`` parameter. Returns
-        empty generator if the given ``max_total_size`` parameter is equal or greater
-        than entire total size. Otherwise removes and yields every deleted item.
+    def cleanup_items(
+        self, max_total_size: str, humanise: bool = True, precision: int = 2
+    ) -> Iterator[dict]:
+        """Completely remove every item starting from the first in given sorting order until it reaches to ``max_total_size`` parameter.
+
+        Returns empty generator if the given ``max_total_size`` parameter is equal or greater than entire total size. Otherwise removes and yields every deleted item.
 
         Blocks until the scanning operation has been completed on first access.
 
@@ -226,9 +240,9 @@ class Folder(object):
         max_total_size = utils.human2bytes(max_total_size)
         while self._total_size > max_total_size:
             item = self._items.popleft()
-            self._total_size -= item['size']
+            self._total_size -= item["size"]
             self._items_len -= 1
-            item_path = os.path.abspath(os.path.join(self._root, item['name']))
+            item_path = os.path.abspath(os.path.join(self._root, item["name"]))
 
             # REMOVE THE ITEM PERMANENTLY
             try:
@@ -240,9 +254,12 @@ class Folder(object):
             yield self._humanise_item(item, precision) if humanise else item
 
         # Reduced to desired size
-        logger.debug('{del_len:d} items with total of {del_size} data has been deleted.'.format(
-            del_len=old_len - self._items_len,
-            del_size=utils.bytes2human(old_size - self._total_size)))
+        logger.debug(
+            "{del_len:d} items with total of {del_size} data has been deleted.".format(
+                del_len=old_len - self._items_len,
+                del_size=utils.bytes2human(old_size - self._total_size),
+            )
+        )
 
     def _await(self) -> None:
         if self._scanning.done() is False:
@@ -274,8 +291,9 @@ class Folder(object):
                 continue
 
     def _get_attributes(self, item: os.DirEntry) -> dict:
-        """Parses entire item and subdirectories and returns:
+        """Parse entire item and subdirectories.
 
+        Returns:
         * Total size in bytes
         * Maximum folder depth of item
         * Total number of files this item contains
@@ -289,16 +307,19 @@ class Folder(object):
         :type item: posix.DirEntry
         :return: Dictionary of {size, depth, num_of_files, atime, mtime, ctime}
         :rtype: dict
+
         """
         # it's a file or symlink, size is already on item stat
         if not item.is_dir(follow_symlinks=False):
             stat = item.stat(follow_symlinks=False)
-            return {'size': stat.st_size,
-                    'depth': self._get_depth(item.path) - self._level,
-                    'num_of_files': 1,
-                    'atime': int(stat.st_atime),
-                    'mtime': int(stat.st_mtime),
-                    'ctime': int(stat.st_ctime)}
+            return {
+                "size": stat.st_size,
+                "depth": self._get_depth(item.path) - self._level,
+                "num_of_files": 1,
+                "atime": int(stat.st_atime),
+                "mtime": int(stat.st_mtime),
+                "ctime": int(stat.st_ctime),
+            }
 
         # It is a folder, recursive size check
         else:
@@ -308,24 +329,25 @@ class Folder(object):
             with os.scandir(item.path) as directory:
                 for i in directory:
                     attrs = self._get_attributes(i)
-                    total_size += attrs['size']
-                    num_of_files += attrs['num_of_files']
-                    atime = max(atime, attrs['atime'])
-                    mtime = max(mtime, attrs['mtime'])
-                    ctime = max(ctime, attrs['ctime'])
-                    depth = max(depth, attrs['depth'])
+                    total_size += attrs["size"]
+                    num_of_files += attrs["num_of_files"]
+                    atime = max(atime, attrs["atime"])
+                    mtime = max(mtime, attrs["mtime"])
+                    ctime = max(ctime, attrs["ctime"])
+                    depth = max(depth, attrs["depth"])
 
-            return {'size': total_size,
-                    'depth': depth,
-                    'num_of_files': num_of_files,
-                    'atime': atime,
-                    'mtime': mtime,
-                    'ctime': ctime}
+            return {
+                "size": total_size,
+                "depth": depth,
+                "num_of_files": num_of_files,
+                "atime": atime,
+                "mtime": mtime,
+                "ctime": ctime,
+            }
 
     @staticmethod
     def _get_item_sort_key(sort_by: SortBy) -> Tuple[str, bool]:
-        """Internal static method to find the item key and ascending/descending
-        flag based on the given `sort_by` parameter.
+        """Find the item key and ascending/descending flag based on the given `sort_by` parameter.
 
         It is a `TypeError` to give anything other than :class:`SortBy` defined
         attributes.
@@ -337,35 +359,34 @@ class Folder(object):
         :exception: Throws `TypeError` if not a :class:`SortBy` enum element.
         """
         if sort_by is SortBy.ATIME_ASC:
-            return 'atime', False
+            return "atime", False
         elif sort_by is SortBy.ATIME_DESC:
-            return 'atime', True
+            return "atime", True
         elif sort_by is SortBy.MTIME_ASC:
-            return 'mtime', False
+            return "mtime", False
         elif sort_by is SortBy.MTIME_DESC:
-            return 'mtime', True
+            return "mtime", True
         elif sort_by is SortBy.CTIME_ASC:
-            return 'ctime', False
+            return "ctime", False
         elif sort_by is SortBy.CTIME_DESC:
-            return 'ctime', True
+            return "ctime", True
         elif sort_by is SortBy.SMALLEST:
-            return 'size', False
+            return "size", False
         elif sort_by is SortBy.LARGEST:
-            return 'size', True
+            return "size", True
         elif sort_by is SortBy.LEAST_FILES:
-            return 'num_of_files', False
+            return "num_of_files", False
         elif sort_by is SortBy.MOST_FILES:
-            return 'num_of_files', True
+            return "num_of_files", True
         elif sort_by is SortBy.LEAST_DEPTH:
-            return 'depth', False
+            return "depth", False
         elif sort_by is SortBy.MOST_DEPTH:
-            return 'depth', True
+            return "depth", True
 
-        raise TypeError('Given sort by parameter is invalid: {0!r}'.format(sort_by))
+        raise TypeError("Given sort by parameter is invalid: {0!r}".format(sort_by))
 
     def _find_index(self, summary: dict, sort_by: SortBy) -> int:
-        """Internal method to find the desired index to insert the given item,
-        based on `sort_by` parameter.
+        """Find the desired index to insert the given item, based on `sort_by` parameter.
 
         Remember this methods runs whilst the scanning process so the returned
         index might not be absolute and may return with little error. This issue
@@ -391,8 +412,7 @@ class Folder(object):
         return index if index == 0 else index + 1
 
     def _insert_sorted(self, item: os.DirEntry, sort_by: SortBy) -> None:
-        """Internal method to insert every scanned item into the local `_items`
-        list on-the-fly by the given `sort_by` parameter.
+        """Insert every scanned item into the local `_items` list on-the-fly by the given `sort_by` parameter.
 
         :param item: DirEntry object from `_iter_items()` async iteration
                 within the async parallel scanning.
@@ -404,29 +424,31 @@ class Folder(object):
         attrs = self._get_attributes(item)
 
         # It is an empty folder, grab folder timestamps
-        if attrs['atime'] == 0 and attrs['mtime'] == 0 and attrs['ctime'] == 0:
+        if attrs["atime"] == 0 and attrs["mtime"] == 0 and attrs["ctime"] == 0:
             stat = item.stat(follow_symlinks=False)
-            attrs['atime'] = int(stat.st_atime)
-            attrs['mtime'] = int(stat.st_mtime)
-            attrs['ctime'] = int(stat.st_ctime)
+            attrs["atime"] = int(stat.st_atime)
+            attrs["mtime"] = int(stat.st_mtime)
+            attrs["ctime"] = int(stat.st_ctime)
 
-        summary = {'name': os.path.relpath(item.path, self._root),
-                   'size': attrs['size'],
-                   'depth': attrs['depth'],
-                   'num_of_files': attrs['num_of_files'],
-                   'atime': attrs['atime'],
-                   'mtime': attrs['mtime'],
-                   'ctime': attrs['ctime']}
+        summary = {
+            "name": os.path.relpath(item.path, self._root),
+            "size": attrs["size"],
+            "depth": attrs["depth"],
+            "num_of_files": attrs["num_of_files"],
+            "atime": attrs["atime"],
+            "mtime": attrs["mtime"],
+            "ctime": attrs["ctime"],
+        }
 
         index = self._find_index(summary, sort_by)
-        self._total_size += summary['size']
+        self._total_size += summary["size"]
         self._items_len += 1
         self._items.insert(index, summary)
 
     def resort(self, sort_by: SortBy) -> None:
-        """Re orders the internal `_items` list based on given `sort_by`
-        parameter. This method is also called at the end of async scanning
-        process to fix the async ordering glitches by :meth:`._insert_sorted`.
+        """Reorder the internal `_items` list based on given `sort_by` parameter.
+
+        This method is also called at the end of async scanning process to fix the async ordering glitches by :meth:`._insert_sorted`.
 
         You can sort a :class:`Folder` object as many times as you like, it
         will not scan the directory again, instead it will re-order the already
@@ -449,22 +471,22 @@ class Folder(object):
         :rtype: None
         """
         sort_key, reverse = self._get_item_sort_key(sort_by)
-        self._items = deque(sorted(self._items,
-                                   key=lambda i: i[sort_key], reverse=reverse))
+        self._items = deque(
+            sorted(self._items, key=lambda i: i[sort_key], reverse=reverse)
+        )
 
     async def _scan(self, sort_by: SortBy) -> None:
-        """Internal async process that has been initialised at the time of
-        object instantiation. It triggers bunch of other blocking / non-blocking
-        methods and calculates the final :attr:`.exec_took`.
-        
-        Public methods should use :meth:`_await` to wait for this internal 
-        scanning to be completed.
+        """Async process that has been initialised at the time of object instantiation.
+
+        It triggers bunch of other blocking / non-blocking methods and calculates the final :attr:`.exec_took`.
+
+        Public methods should use :meth:`_await` to wait for this internal scanning to be completed.
 
         :param sort_by: SortBy enum attribute
         :type sort_by: SortBy
         :rtype: None
         """
-        logger.debug('Scanning initialised')
+        logger.debug("Scanning initialised")
 
         # those 2 lines are pretty much the BOTTLENECK of entire app.
         async for item in self._iter_items(self._root):
@@ -473,7 +495,9 @@ class Folder(object):
         self.resort(sort_by)
         self.exec_took = round(time.time() - self.exec_took, 3)
         logger.debug(
-            'Scanning completed for {len:d} items with {size} of data; took {exec} second(s).'.format(
+            "Scanning completed for {len:d} items with {size} of data; took {exec} second(s).".format(
                 len=self._items_len,
                 size=utils.bytes2human(self._total_size),
-                exec=self.exec_took))
+                exec=self.exec_took,
+            )
+        )

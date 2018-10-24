@@ -1,14 +1,15 @@
-#: Storage size symbols
-SYM_NAMES = ('Byte', 'Kb', 'Mb', 'Gb', 'Tb', 'Pb', 'Xb', 'Zb', 'Yb')
+#!/usr/bin/env python3
+"""Utilities for dealing with file sizes."""
+
+SYM_NAMES = ("Bytes", "Kb", "Mb", "Gb", "Tb", "Pb", "Xb", "Zb", "Yb")
 
 
 def human2bytes(value: str) -> int:
-    """ Attempts to guess the string format based on default symbols set and
-    return the corresponding bytes as an integer. When unable to recognize
-    the format ValueError is raised.
+    """Attempt to guess the string format based on default symbols and return the corresponding bytes as an integer.
 
-    Function itself is case-insensitive means 'gb' = 'Gb' = 'GB' for gigabyte. It does
-    not support bytes (as in 300b) and any numeric value will be considered as
+    When unable to recognize the format, ValueError is raised.
+
+    Function itself is case-insensitive means 'gb' = 'Gb' = 'GB' for gigabyte. It does not support bytes (as in 300b) and any numeric value will be considered as
     megabyte. Supported file sizes are:
 
     * Kb: Kilobyte
@@ -45,18 +46,18 @@ def human2bytes(value: str) -> int:
     :raises TypeError: If other than string given
     :raises ValueError: If cannot parse the human-readable string
     """
-
+    # Internal function
     def _get_float(val: str) -> float:
         try:
             return float(val)
         except ValueError:
-            raise ValueError('Cannot convert to float: {0}'.format(value))
+            raise ValueError("Cannot convert to float: {0}".format(value))
 
     # Assume a 2-digit symbol was given
     try:
         sym = value[-2:].capitalize()
     except (TypeError, AttributeError):
-        raise TypeError('Expected string, given: {0}.'.format(type(value)))
+        raise TypeError("Expected string, given: {0}.".format(type(value)))
 
     if sym in SYM_NAMES:
         # size symbol is correct
@@ -65,7 +66,7 @@ def human2bytes(value: str) -> int:
         return int(num * (1 << index * 10))
 
     # "Byte" special condition
-    elif value[-4:].lower() == 'byte':
+    elif value[-4:].lower() == "byte":
         return int(_get_float(value[:-4]))
 
     # incorrect or no symbol given, will try to parse float so will raise value error
@@ -73,8 +74,10 @@ def human2bytes(value: str) -> int:
         return int(_get_float(value))
 
 
-def bytes2human(value: int or float, precision: int=2) -> str:
-    """Converts integer byte values to human readable name. For example:
+def bytes2human(value: int or float, precision: int = 2) -> str:
+    """Convert integer byte values to human readable name.
+
+    For example:
 
       >>> bytes2human(0.9 * 1024)
       '922 Byte'
@@ -112,11 +115,11 @@ def bytes2human(value: int or float, precision: int=2) -> str:
         raise exc
     else:
         if value < 0:
-            raise ValueError('Given value cannot be negative: {0.real}'.format(value))
+            raise ValueError("Given value cannot be negative: {0.real}".format(value))
 
     # value is less than a kilobyte, so it's simply byte
     if byte_val < 1024:
-        return '{0:d} Byte'.format(byte_val)
+        return "{0:d} Byte".format(byte_val)
 
     # do reverse loop on size indexes
     for i in range(len(SYM_NAMES), 0, -1):
@@ -131,6 +134,6 @@ def bytes2human(value: int or float, precision: int=2) -> str:
         size = round(size + remaining, precision)
 
         if size.is_integer():
-            return '{0:d} {1}'.format(int(size), SYM_NAMES[i])
+            return "{0:d} {1}".format(int(size), SYM_NAMES[i])
         else:
-            return '{0.real} {1}'.format(size, SYM_NAMES[i])
+            return "{0.real} {1}".format(size, SYM_NAMES[i])
