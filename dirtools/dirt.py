@@ -5,6 +5,7 @@ import io
 import logging
 import os
 import sys
+import argument_parser
 
 try:
     import click
@@ -32,10 +33,10 @@ try:
     if bool(os.environ.get("DIRTOOLS3_DEBUG")):
         sys.path.append(os.path.abspath(os.path.join(__file__, "../..")))
 
-    from dirtools import Folder, SortBy
+    from scanner import Folder, SortBy
 
-    from dirtools.utils import bytes2human, human2bytes
-    from dirtools.loggers import logger
+    from utils import bytes2human, human2bytes
+    from loggers import logger
 except ImportError:
     print(
         "dirtools3 package is not installed. Please install it with: \n"
@@ -43,7 +44,7 @@ except ImportError:
     )
     raise SystemExit
 else:
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.DEBUG)
 
 TABLE_HEADERS = {
     "name": "Name",
@@ -55,12 +56,12 @@ TABLE_HEADERS = {
     "ctime": "Change Time",
 }
 
-cli = click.Group()
+# cli = click.Group()
 SORT_BY_OPTIONS = [str(s).lower() for s in SortBy]
 TABULATE_OPTIONS = ("csv",) + tuple(_table_formats.keys())
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
-
+"""
 @cli.command(context_settings=CONTEXT_SETTINGS)
 @click.argument("path", nargs=1, default=os.getcwd())
 @click.option(
@@ -119,14 +120,24 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "WARNING: --trim-down action DELETES your files and cannot be undo!",
 )
 def invoke_dirtools3(path, sortby, output, precision, depth, nohuman, trim_down: str):
+"""
+
+
+def invoke_dirtools3(args):
     """Command line interface to the dirtools package."""
     # Get SortBy enum val
     try:
-        sortby = next(s for s in SortBy if sortby.upper() == str(s))
+        sortby = next(s for s in SortBy if args.sortby.upper() == str(s))
     except StopIteration:
-        click.secho("Invalid sort by option: {0}".format(sortby), err=True, fg="red")
+        sys.stderr.write("Invalid sort by option: {0}".format(sortby))
         return
-
+    path = args.path
+    # sortby = args.sortby
+    precision = args.precision
+    depth = args.depth
+    nohuman = args.nohuman
+    trim_down = args.trim_down
+    output = args.output
     # Create folder object and start its scanning process
     scan = Folder(path, sortby, level=depth)
     old_size = scan.total_size
@@ -138,12 +149,10 @@ def invoke_dirtools3(path, sortby, output, precision, depth, nohuman, trim_down:
     # Do not allow to pass only digit value because it will be interpreted as
     # byte value and probably this was an accident.
     elif trim_down.isdigit():
-        click.secho(
+        sys.stderr.write(
             "--trim-down value cannot be only numeric to prevent accident, {0} given.".format(
                 trim_down
-            ),
-            err=True,
-            fg="red",
+            )
         )
         return
     # Folder trimming
@@ -161,37 +170,36 @@ def invoke_dirtools3(path, sortby, output, precision, depth, nohuman, trim_down:
     else:
         rows = tabulate(items, TABLE_HEADERS, tablefmt=output, stralign="right")
 
-    click.echo(rows)
+    sys.stdout.write(rows)
 
     # Give summary info regarding to its listing
     if trim_down is None:
-        click.secho(
+        sys.stderr.write(
             "{len} items with total of {size} data; took {exec} second(s).".format(
                 exec=scan.exec_took,
                 size=bytes2human(scan.total_size, precision=precision),
                 len=len(scan),
-            ),
-            bold=True,
+            )
         )
     # or cleaning operation
     else:
         del_len = len(scan) - old_items_len
         del_size = bytes2human(old_size - scan.total_size, precision=precision)
-        click.secho(
+        sys.stderr.write(
             "{del_len:d} items with total of {del_size} data has been deleted.".format(
                 del_len=del_len, del_size=del_size
-            ),
-            bold=True,
+            )
         )
-        click.secho(
+        sys.stderr.write(
             "Currently {len} items left with {size} of data; took {exec} second(s).".format(
                 len=len(scan),
                 size=bytes2human(scan.total_size, precision=precision),
                 exec=scan.exec_took,
-            ),
-            bold=True,
+            )
         )
 
 
 if __name__ == "__main__":
-    invoke_dirtools3()
+    args = argument_parser.get_args([])
+    logger.debug(args)
+    invoke_dirtools3(args)

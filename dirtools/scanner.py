@@ -325,7 +325,7 @@ class Folder(object):
         else:
             total_size = num_of_files = depth = 0
             atime = mtime = ctime = 0
-
+            # TODO: try/except catch PermissionError
             with os.scandir(item.path) as directory:
                 for i in directory:
                     attrs = self._get_attributes(i)
