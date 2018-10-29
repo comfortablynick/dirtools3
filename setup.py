@@ -16,7 +16,8 @@ setup(
     # metadata that uploads to PyPI
     author='Roy Enjoy',
     author_email='kirpit [at] gmail [dot] com',
-    description="""dirtools3 is a utility package that helps you to scan file system folders to
+    description=
+    """dirtools3 is a utility package that helps you to scan file system folders to
 collect statistical information about their sub contents (size, file count,
 creation time, modification time etc. for each sub folder or file). It also
 provides cleanup method to reduce their total size by removing low-redundant
