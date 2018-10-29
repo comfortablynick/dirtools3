@@ -129,6 +129,11 @@ def invoke_dirtools3(args):
 
 
 if __name__ == "__main__":
-    args = argument_parser.get_args([])
+    try:
+        sys.argv[1]
+        cli_args = sys.argv[1:]
+    except IndexError:
+        cli_args = []
+    args = argument_parser.get_args(cli_args)
     logger.debug(args)
     invoke_dirtools3(args)
