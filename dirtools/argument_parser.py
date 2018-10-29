@@ -17,10 +17,10 @@ try:
     if bool(os.environ.get("DIRTOOLS3_DEBUG")):
         sys.path.append(os.path.abspath(os.path.join(__file__, "../..")))
 
-    from dirtools import Folder, SortBy
+    from scanner import Folder, SortBy
 
-    from dirtools.utils import bytes2human, human2bytes
-    from dirtools.loggers import logger
+    from utils import bytes2human, human2bytes
+    from loggers import logger
 except ImportError:
     print("Cannot find dirtools3 package.")
     raise SystemExit

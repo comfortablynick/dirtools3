@@ -1,4 +1,4 @@
-from dirtools.scanner import Folder, SortBy
+from scanner import Folder, SortBy
 
 __version__ = '0.0.2'
 
