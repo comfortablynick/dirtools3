@@ -107,7 +107,7 @@ def invoke_dirtools3(args):
             "\n{ct} with total of {size} data; took {exec}.".format(
                 exec=lit(scan.exec_took, "second", "seconds"),
                 size=bytes2human(scan.total_size, precision=precision),
-                ct=lit(len(scan), "item", "items"),   
+                ct=lit(len(scan), "item", "items"),
             )
         )
     # or cleaning operation
