@@ -5,7 +5,8 @@ import io
 import logging
 import os
 import sys
-import argument_parser
+
+from dirtools import argument_parser
 
 try:
     from tabulate import tabulate, _table_formats
@@ -23,10 +24,10 @@ try:
     if bool(os.environ.get("DIRTOOLS3_DEBUG")):
         sys.path.append(os.path.abspath(os.path.join(__file__, "../..")))
 
-    from scanner import Folder, SortBy
+    from dirtools.scanner import Folder, SortBy
 
-    from utils import bytes2human, human2bytes
-    from loggers import logger
+    from dirtools.utils import bytes2human, human2bytes
+    from dirtools.loggers import logger
 except ImportError:
     print(
         "dirtools3 package is not installed. Please install it with: \n"

@@ -9,12 +9,12 @@ from enum import Enum
 from functools import partial
 from typing import Iterator, Tuple
 
-import utils
-from loggers import logger
+from dirtools import utils
+from dirtools.loggers import logger
 
 
 class SortBy(Enum):
-    """Helper class to be given one of its following constants as the sorting option to the :class:`FolderScan`.
+    """Helper class to be given one of its following as the sorting option to the :class:`FolderScan`.
 
     >>> from dirtools import Folder, SortBy
     >>>

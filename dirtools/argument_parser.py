@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Parse command line arguments."""
-import os
 import argparse
 import logging
+import os
 import sys
 
 try:
@@ -17,10 +17,10 @@ try:
     if bool(os.environ.get("DIRTOOLS3_DEBUG")):
         sys.path.append(os.path.abspath(os.path.join(__file__, "../..")))
 
-    from scanner import Folder, SortBy
+    from dirtools.scanner import Folder, SortBy
 
-    from utils import bytes2human, human2bytes
-    from loggers import logger
+    from dirtools.utils import bytes2human, human2bytes
+    from dirtools.loggers import logger
 except ImportError:
     print("Cannot find dirtools3 package.")
     raise SystemExit
